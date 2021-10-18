@@ -9,7 +9,7 @@ from reteEnvironment import ReteEnvironment
 class ReinforcementTrainer:
     pass
 
-def rollout(env):
+def rollout(env: ReteEnvironment):
     experienceStack = []
     #print(f"goal({env.goal})")
     for i in range(50):
