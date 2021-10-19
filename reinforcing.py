@@ -5,7 +5,6 @@ from network import TrainableNetwork
 from policy import SoftQueuePolicy
 from reteEnvironment import ReteEnvironment
 
-
 class ReinforcementTrainer:
     pass
 
