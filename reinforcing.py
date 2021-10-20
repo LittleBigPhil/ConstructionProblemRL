@@ -9,6 +9,7 @@ class ReinforcementTrainer:
     pass
 
 def rollout(env: ReteEnvironment):
+    """Generates raw experiences by stepping according to the policy."""
     experienceStack = []
     #print(f"goal({env.goal})")
     for i in range(50):
@@ -23,6 +24,9 @@ def rollout(env: ReteEnvironment):
     return experienceStack
 
 def makeExperiences(experienceStack):
+    """Propagates the reward back to transform raw experiences into informed experiences."""
+    """ToDo:
+    Add support for non-monte-carlo return."""
     entropyWeight = .1
     discountFactor = .99
     replayBuffer = []
@@ -37,6 +41,10 @@ def makeExperiences(experienceStack):
     return replayBuffer
 
 def dream(policy, replayBuffer):
+    """Trains from the already generated experiences."""
+    """ToDo:
+    Create minibatches from the replay buffer and train on those.
+    Allow for policy gradient instead of value learning."""
     for features, reward in replayBuffer:
         #reward = np.array(reward)
         #reward = torch.from_numpy(reward)

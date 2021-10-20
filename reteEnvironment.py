@@ -1,29 +1,39 @@
 from policy import SoftQueuePolicy
+from constructionProblem import ConstructionProblem
 from reteNodes import *
 
 class ReteEnvironment:
-    def __init__(self, problem, studentPolicy = SoftQueuePolicy(), teacherPolicy = SoftQueuePolicy()):
+    def __init__(self, problem: ConstructionProblem, studentPolicy: SoftQueuePolicy = SoftQueuePolicy(), teacherPolicy: SoftQueuePolicy = SoftQueuePolicy()):
         self.problem = problem
 
-        self.goal = None
+        self.__selectGoal(None)
+        self.__setupRete()
+
+        self.studentPolicy = studentPolicy
+        self.teacherPolicy = teacherPolicy
+        self.policy = self.studentPolicy
+
+        self.reset()
+    def __setupRete(self):
         self.rootNode = BasicNode()
-        self.goalSelectionNode = buildProductionNode("goal", lambda arg: self.selectGoal(arg))
+        self.goalSelectionNode = buildProductionNode("goal", lambda arg: self.__selectGoal(arg))
         self.instantiationsNode = BasicNode()
 
         self.problem.setupRete(self.rootNode, self.instantiationsNode)
         self.goalSelectionNode.link(self.instantiationsNode)
 
-        self.studentPolicy = studentPolicy
-        self.teacherPolicy = teacherPolicy
-        self.policy = self.studentPolicy
         self.instantiationsNode.onAdd = lambda instantiation: \
             self.policy.add(instantiation, self.problem.extractFeatures(instantiation, self.goal))
 
-        self.log = []
-
-        self.reset()
 
     def step(self):
+        """
+        Instantiates a single production according to the policy.
+        @return: (done, inferred, features)
+        @return done: True if the goal has been reached.
+        @return inferred: The most recently produced object.
+        @return features: The features of the instantiation which was taken.
+        """
         instantiation = self.policy.resolve()
         features = self.problem.extractFeatures(instantiation, self.goal)
         inferred = instantiation.resolve()
@@ -33,37 +43,43 @@ class ReteEnvironment:
         done = self.goal in self.rootNode.objects
         return done, inferred, features
 
-    def clear(self):
+    def __clear(self):
+        """Empty everything and disable goal selection."""
         self.rootNode.clear()
         self.rootNode.unlink(self.goalSelectionNode)
         self.policy.clear()
         self.log = []
-    def reset(self):
-        self.goal = None
-        self.clear()
+    def __manualReset(self, policy, initialObjects, resetGoal):
+        """Resets the state of the environment and sets up a specific task."""
+        if resetGoal:
+            self.__selectGoal(None)
 
-        initialObjects = self.problem.generateInitialObjects()
-        self.policy = self.teacherPolicy
+        self.__clear()
+        self.policy = policy
         self.rootNode.addMany(initialObjects)
+    def reset(self):
+        """Resets the state of the environment and generates a task."""
+        initialObjects = self.problem.generateInitialObjects()
+        self.__manualReset(self.teacherPolicy, initialObjects, resetGoal = True)
+        self.__stepUntilGoal()
+        self.__manualReset(self.studentPolicy, initialObjects, resetGoal = False)
 
+    def __selectGoal(self, goal):
+        self.goal = goal
+    def __forceGoalSelection(self):
+        """Remove all instantiations which aren't selecting a goal.
+        This forces the next action to be a goal selection."""
+        self.policy.clear()
+        for instantiation in self.goalSelectionNode.objects:
+            self.policy.add(instantiation, self.problem.extractFeatures(instantiation, self.goal))
+    def __stepUntilGoal(self):
+        """Steps repeatedly until a goal has been selected."""
         i = 0
         while self.goal is None:
             if i == self.problem.goalSelectionDelay():
                 self.rootNode.link(self.goalSelectionNode)
+            if i == self.problem.goalSelectionDelay() + 5:
+                self.__forceGoalSelection()
+
             self.step()
             i += 1
-            if i == self.problem.goalSelectionDelay() + 5:
-                self.forceGoalSelection()
-                # force a goal selection
-                #print("Failed to pick a goal.")
-                #break
-
-        self.clear()
-        self.policy = self.studentPolicy
-        self.rootNode.addMany(initialObjects)
-    def selectGoal(self, goal):
-        self.goal = goal
-    def forceGoalSelection(self):
-        self.policy.clear()
-        for instantiation in self.goalSelectionNode.objects:
-            self.policy.add(instantiation, self.problem.extractFeatures(instantiation, self.goal))
