@@ -25,14 +25,14 @@ class BasicNode:
         self.onAdd = onAdd
         self.onClear = onClear
 
-        self.objects = [] # The cache of added objects. This is used to avoid propagating duplicate objects.
+        self.objects = set() # The cache of added objects. This is used to avoid propagating duplicate objects.
         self.children = [] # The nodes which take the output of the current node.
 
     def add(self, object):
         """Applies the given functions to process a new object, adds it to the cache, and propagates it to child nodes accordingly."""
         object = self.transform(object)
         if self.predicate(object) and object not in self.objects:
-            self.objects.append(object)
+            self.objects.add(object)
             self.onAdd(object)
             for child in self.children:
                 child.add(object)
@@ -42,7 +42,7 @@ class BasicNode:
             self.add(object)
     def clear(self):
         """Empties the object cache and the cache of all child nodes."""
-        self.objects = []
+        self.objects = set()
         for child in self.children:
             child.clear()
         self.onClear()
@@ -62,7 +62,6 @@ class BasicNode:
 class ProductNode(BasicNode):
     """A node that has two parents, and combines their outputs into the cartesian product of those outputs."""
     def __init__(self):
-        # Consider adding the optional parameters of BasicNode to this node.
         BasicNode.__init__(self)
         self.left = BasicNode(onAdd=self.addLeft, onClear=self.clear)
         self.right = BasicNode(onAdd=self.addRight, onClear=self.clear)
