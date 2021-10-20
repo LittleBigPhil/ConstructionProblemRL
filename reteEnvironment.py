@@ -34,14 +34,14 @@ class ReteEnvironment:
         @return inferred: The most recently produced object.
         @return features: The features of the instantiation which was taken.
         """
-        instantiation = self.policy.resolve()
+        instantiation, popInfo = self.policy.resolve()
         features = self.problem.extractFeatures(instantiation, self.goal)
         inferred = instantiation.resolve()
         if inferred is not None:
             self.rootNode.add(inferred)
             self.log.append((str(instantiation), inferred, -1))
         done = self.goal in self.rootNode.objects
-        return done, inferred, features
+        return done, inferred, features, popInfo
 
     def __clear(self):
         """Empty everything and disable goal selection."""

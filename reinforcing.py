@@ -1,27 +1,36 @@
 import torch
-
+import numpy as np
 from constructionProblem import VectorAddition
 from network import TrainableNetwork
 from policy import SoftQueuePolicy
 from reteEnvironment import ReteEnvironment
+from softQueue import PopInfo
+import matplotlib.pyplot as plt
 
 class ReinforcementTrainer:
     pass
 
-def rollout(env: ReteEnvironment):
+def rollout(env: ReteEnvironment, policy: TrainableNetwork, critic: TrainableNetwork, maxStepsPerEpisode: int):
     """Generates raw experiences by stepping according to the policy."""
     experienceStack = []
     #print(f"goal({env.goal})")
-    for i in range(50):
-        entropy = env.policy.entropy()
-        done, inferred, features = env.step()
-        experienceStack.append((features, entropy))
+    for i in range(maxStepsPerEpisode):
+        done, inferred, features, popInfo = env.step()
+        experienceStack.append((features, popInfo.entropy))
         if done:
             break
+        policyGradientUpdate(policy, critic, features, popInfo)
     #print(env.rootNode.objects)
     #print(f"\tsteps = {i+1}")
     #print(experienceStack)
     return experienceStack
+
+def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, features, popInfo: PopInfo):
+    evaluation = critic(features) - 1 # not sure if the -1 is appropriate
+    factor = evaluation / popInfo.total
+    logP = torch.log(torch.Tensor([popInfo.probability]))
+    loss = torch.mul(logP, factor)
+    policy.trainByGradient(features, loss)
 
 def makeExperiences(experienceStack):
     """Propagates the reward back to transform raw experiences into informed experiences."""
@@ -60,17 +69,36 @@ def main():
     critic = TrainableNetwork(inputSize, inputSize * 2, 2)
     env = ReteEnvironment(problem=VectorAddition(), studentPolicy=outerPolicy)
 
-    quality = 100
+    maxStepsPerEpisode = 20
 
-    for i in range(1000):
-        experienceStack = rollout(env)
-        quality = .99 * quality + .01 * len(experienceStack)
-        print(f"goal({env.goal}) took {len(experienceStack)} steps. Quality is {round(quality,2)}.")
+    yVals = []
+    xVals = []
+    rawQuality = 0
+    qualityMomentum = .995
+    bigStep = int(1 / (1 - qualityMomentum))
+    print(bigStep)
+    i = 0
+    while True:
+        i += 1
+        experienceStack = rollout(env, innerPolicy, critic, maxStepsPerEpisode)
+        rawQuality = qualityMomentum * rawQuality + (1 - qualityMomentum) * (maxStepsPerEpisode - len(experienceStack))
+        quality = rawQuality / (1 - qualityMomentum ** i) # Adam style bias correction
+
+        if i > bigStep:
+            xVals.append(i)
+            yVals.append(quality)
+
+        #if i % 10 == 0:
+            #print(f"goal({env.goal}) took {len(experienceStack)} steps. Quality is {round(quality,2)}. i is {i}.")
 
         replayBuffer = makeExperiences(experienceStack)
         #dream(innerPolicy, replayBuffer)
         dream(critic, replayBuffer)
         env.reset()
+        if i > bigStep and i % 1000 == 0:
+            plt.plot(xVals, yVals)
+            plt.show()
+
 
 if __name__ == '__main__':
     main()

@@ -3,6 +3,7 @@
 import math
 import random
 from functools import *
+from math import log
 
 def main():
     """Demonstrate the behavior of SoftQueue."""
@@ -14,6 +15,13 @@ def main():
     for i in range(4):
         print(queue.pop())
     print(queue)
+
+class PopInfo:
+    def __init__(self, probability, total, entropy):
+        self.probability = probability
+        self.total = total
+        self.entropy = entropy
+
 
 class SoftQueue:
     """A soft priority queue. That is, a priority queue which is sampled according to the softmax of the priority."""
@@ -49,8 +57,9 @@ class SoftQueue:
         value = random.random()
         for i, prob in enumerate(self.probabilities()):
             value -= prob
+            info = PopInfo(prob, self.total, self.entropy())
             if value < 0:
-                return i
+                return i, info
         return i
 
     def indexForInsertion(self, proportion):
@@ -60,9 +69,9 @@ class SoftQueue:
         return len(self.queue)
 
     def pop(self):
-        i = self.sample()
+        i, info = self.sample()
         self.total -= self.queue[i].proportion
-        return self.queue.pop(i).object
+        return self.queue.pop(i).object, info
 
     def __str__(self):
         if len(self.queue) > 0:
@@ -72,6 +81,11 @@ class SoftQueue:
 
     def probabilities(self):
         return map(lambda pair: pair.proportion / self.total, self.queue)
+
+    def entropy(self):
+        """Calculates the entropy from the probabilities."""
+        pLogPs = map(lambda prob: -prob * log(prob), self.probabilities())
+        return reduce(lambda x, y: x+y, pLogPs)
 
 if __name__ == '__main__':
     main()

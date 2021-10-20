@@ -48,6 +48,12 @@ class TrainableNetwork:
         self.optimizer.step()
         self.network.zero_grad()
 
+    def trainByGradient(self, features, gradient):
+        self.network(features)
+        gradient.backward()
+        self.optimizer.step()
+        self.network.zero_grad()
+
 def main():
     """Demonstrates the behavior of TrainableNetwork."""
     torch.manual_seed(123)
