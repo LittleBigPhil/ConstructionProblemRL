@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from constructionProblem import VectorAddition
-from network import TrainableNetwork
+from network import *
 from policy import SoftQueuePolicy
 from reteEnvironment import ReteEnvironment
 from softQueue import PopInfo
@@ -64,6 +64,7 @@ def main():
     problem = VectorAddition()
     inputSize = problem.featureAmount()
 
+    #innerPolicy = UniformWeighter()
     innerPolicy = TrainableNetwork(inputSize, inputSize * 2, 2)
     outerPolicy = SoftQueuePolicy(policy=innerPolicy)
     critic = TrainableNetwork(inputSize, inputSize * 2, 2)
@@ -74,7 +75,7 @@ def main():
     yVals = []
     xVals = []
     rawQuality = 0
-    qualityMomentum = .995
+    qualityMomentum = .99995
     bigStep = int(1 / (1 - qualityMomentum))
     print(bigStep)
     i = 0
@@ -95,7 +96,7 @@ def main():
         #dream(innerPolicy, replayBuffer)
         dream(critic, replayBuffer)
         env.reset()
-        if i > bigStep and i % 1000 == 0:
+        if i > bigStep * 2 and i % (bigStep * 4) == 0:
             plt.plot(xVals, yVals)
             plt.show()
 

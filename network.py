@@ -33,7 +33,7 @@ class TrainableNetwork:
     """A wrapper for a neural network that has a simpler training interface."""
     def __init__(self, inputSize, hiddenSize, hiddenAmount = 2):
         self.network = NeuralNetwork(inputSize, hiddenSize, hiddenAmount)
-        self.optimizer = optim.Adam(params=self.network.parameters(), lr = .01)
+        self.optimizer = optim.Adam(params=self.network.parameters(), lr = .00001)
         self.lossFunc = nn.L1Loss()
 
     def __call__(self, features):
