@@ -19,7 +19,7 @@ def rollout(env: ReteEnvironment, policy: TrainableNetwork, critic: TrainableNet
         experienceStack.append((features, popInfo.entropy))
         if done:
             break
-        policyGradientUpdate(policy, critic, features, popInfo)
+        #policyGradientUpdate(policy, critic, features, popInfo)
     #print(env.rootNode.objects)
     #print(f"\tsteps = {i+1}")
     #print(experienceStack)
@@ -93,8 +93,8 @@ def main():
             #print(f"goal({env.goal}) took {len(experienceStack)} steps. Quality is {round(quality,2)}. i is {i}.")
 
         replayBuffer = makeExperiences(experienceStack)
-        #dream(innerPolicy, replayBuffer)
-        dream(critic, replayBuffer)
+        dream(innerPolicy, replayBuffer)
+        #dream(critic, replayBuffer)
         env.reset()
         if i > bigStep * 2 and i % (bigStep * 4) == 0:
             plt.plot(xVals, yVals)

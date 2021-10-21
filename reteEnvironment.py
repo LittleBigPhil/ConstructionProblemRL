@@ -40,6 +40,7 @@ class ReteEnvironment:
         if inferred is not None:
             self.rootNode.add(inferred)
             self.log.append((str(instantiation), inferred, -1))
+            #self.policy.sample
         done = self.goal in self.rootNode.objects
         return done, inferred, features, popInfo
 

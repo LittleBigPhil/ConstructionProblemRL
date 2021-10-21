@@ -79,6 +79,12 @@ class SoftQueue:
         else:
             return "SoftQueue()"
 
+    def __len__(self):
+        return len(self.queue)
+
+    def __getitem__(self, item):
+        return self.queue[item]
+
     def probabilities(self):
         return map(lambda pair: pair.proportion / self.total, self.queue)
 

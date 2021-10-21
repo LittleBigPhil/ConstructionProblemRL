@@ -17,5 +17,19 @@ class SoftQueuePolicy:
     def resolve(self):
         """Removes an element from the queue according to the probability."""
         return self.queue.pop()
+    def sampleActionSpace(self, toSample: int):
+        toSample = max(toSample, len(self.queue))
+
+        sampled = []
+        while toSample > 0:
+            index = self.queue.sample()
+            if not index in sampled:
+                sampled.append(index)
+                toSample -= 1
+            # Should probably add a special sampling procedure that can't do repeats.
+
+        return [self.queue[i].object for i in sampled]
+
+
 
 
