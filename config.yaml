@@ -1,1 +1,13 @@
+# Network Details
+hiddenLayers: 2
+hiddenLayerSizeFactor: 2
+
+# Training Details
+maxStepsPerEpisode: 20
 learningRate: 1.0e-5
+entropyWeight: .1
+discountFactor: .99
+
+# Evaluation
+qualityMomentum: .99
+#qualityMomentum: .99995

@@ -2,6 +2,7 @@
 
 import torch
 from torch import nn, autograd, optim
+from configLoader import *
 
 class UniformWeighter:
     """A class which prioritizes every action the same, for creating a uniformly random policy."""
@@ -33,7 +34,7 @@ class TrainableNetwork:
     """A wrapper for a neural network that has a simpler training interface."""
     def __init__(self, inputSize, hiddenSize, hiddenAmount = 2):
         self.network = NeuralNetwork(inputSize, hiddenSize, hiddenAmount)
-        self.optimizer = optim.Adam(params=self.network.parameters(), lr = .00001)
+        self.optimizer = optim.Adam(params=self.network.parameters(), lr = Configuration.load().learningRate)
         self.lossFunc = nn.L1Loss()
 
     def __call__(self, features):
