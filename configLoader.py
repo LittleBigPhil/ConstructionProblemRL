@@ -25,6 +25,8 @@ class Configuration:
         """The configuration details are transformed from a dictionary entry into an attribute."""
         self.hiddenLayers = data["hiddenLayers"]
         self.hiddenLayerSizeFactor = data["hiddenLayerSizeFactor"]
+        self.softMaxSensitivity = data["softMaxSensitivity"]
+        self.softMaxOffset = data["softMaxOffset"]
 
         self.maxStepsPerEpisode = data["maxStepsPerEpisode"]
         self.learningRate = data["learningRate"]

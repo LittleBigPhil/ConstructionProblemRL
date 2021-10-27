@@ -1,6 +1,8 @@
 # Network Details
 hiddenLayers: 2
 hiddenLayerSizeFactor: 2
+softMaxSensitivity: .25
+softMaxOffset: -10
 
 # Training Details
 maxStepsPerEpisode: 20

@@ -2,11 +2,13 @@
 from functools import *
 from network import *
 from softQueue import SoftQueue
+from configLoader import *
 
 class SoftQueuePolicy:
     """A policy for picking instantiations based on a soft priority queue."""
     def __init__(self, policy = UniformWeighter()):
-        self.queue = SoftQueue()
+        config = Configuration.load()
+        self.queue = SoftQueue(sensitivity=config.softMaxSensitivity, offset=config.softMaxOffset)
         self.policy = policy
     def clear(self):
         """Empties the queue."""

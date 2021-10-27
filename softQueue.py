@@ -25,6 +25,8 @@ class PopInfo:
 
 class SoftQueue:
     """A soft priority queue. That is, a priority queue which is sampled according to the softmax of the priority."""
+    #need to make this more numerically stable by doing softmax(x - max(x))
+
     class ProportionPair:
         """A helper class that functions as a named tuple."""
         def __init__(self, object, proportion):
@@ -34,19 +36,21 @@ class SoftQueue:
         def __str__(self):
             return f"Pair({self.object}, {self.proportion:.2f})"
 
-    def __init__(self, sensitivity=1):
+    def __init__(self, sensitivity=1, offset = 0):
         """
         @param sensitivity: A parameter of the softmax that specifies how sensitive the proportions are with respect to the priorities.
+        @param offset: A parameter of the softmax that helps with numerical stability
         """
         self.queue = []
         self.total = 0 # The sum of all proportions in the queue.
         self.sensitivity = sensitivity
+        self.offset = offset
 
     def add(self, object, priority):
         """Calculates the proportion for the priority and stores the object with this proportion."""
-        # Need to improve the efficiency of this using binary search
-        # Well, binary search isn't needed because insertion is O(log(n)) with python lists
-        proportion = math.exp(priority * self.sensitivity)
+        # Could improve the efficiency of this using binary search
+        # Well, binary search isn't useful by itself because insertion is O(log(n)) with python lists
+        proportion = math.exp((priority + self.offset) * self.sensitivity)
         pair = SoftQueue.ProportionPair(object, proportion)
         index = self.indexForInsertion(proportion)
         self.queue.insert(index, pair)
@@ -86,7 +90,11 @@ class SoftQueue:
         return self.queue[item]
 
     def probabilities(self):
-        return map(lambda pair: pair.proportion / self.total, self.queue)
+        try:
+            return map(lambda pair: pair.proportion / self.total, self.queue)
+        except ZeroDivisionError:
+            print("softmax instability")
+            return map(lambda pair: 1 / len(self.queue), self.queue)
 
     def entropy(self):
         """Calculates the entropy from the probabilities."""

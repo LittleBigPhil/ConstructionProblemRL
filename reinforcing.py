@@ -110,6 +110,7 @@ class SoftQ(ReinforcementAlgorithm):
 
 def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, features, popInfo: PopInfo):
     evaluation = critic(features)
+    assert(False, "Add sensitivity of the softmax and make sure you're doing exponential correctly.")
     factor = evaluation / popInfo.total
     logP = torch.log(torch.Tensor([popInfo.probability]))
     loss = torch.mul(logP, factor)
