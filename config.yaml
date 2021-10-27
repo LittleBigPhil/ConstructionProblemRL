@@ -9,5 +9,5 @@ entropyWeight: .1
 discountFactor: .99
 
 # Evaluation
-qualityMomentum: .99
+qualityMomentum: .999
 #qualityMomentum: .99995

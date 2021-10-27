@@ -13,11 +13,11 @@ class ConstructionProblem:
     def setupRete(self, rootNode, instantiationsNode):
         """Creates the nodes and connects them to the input and output nodes."""
         raise NotImplementedError()
-    def featureAmount(self):
+    def featureAmount(self) -> int:
         """The maximum size of the feature array of a production in the problem."""
         raise NotImplementedError()
 
-    def goalSelectionDelay(self):
+    def goalSelectionDelay(self) -> int:
         """How many steps to wait before introducing the goal selection productions."""
         return 5
 
