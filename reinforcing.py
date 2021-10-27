@@ -8,11 +8,12 @@ from softQueue import PopInfo
 import matplotlib.pyplot as plt
 from configLoader import *
 from statistics import *
+from collections import deque
+from random import randrange
 
 """
 ToDo:
-Stop throwing away replays right away.
-Create minibatches from the replay buffer and train on those.
+Make replay buffer minibatches compatible with batch training.
 Integrate policy gradient.
 """
 
@@ -31,7 +32,7 @@ class ReinforcementTrainer:
         self.env = ReteEnvironment(problem=problem, studentPolicy=self.outerPolicy)
         self.algorithm = SoftQ()
 
-        self.__replayBuffer = []
+        self.replayBuffer = deque(maxlen = Configuration.load().replayBufferSize) # Circular buffer
 
     def rollout(self, maxStepsPerEpisode: int) -> int:
         experienceStack = self.__makeRawExperiences(maxStepsPerEpisode)
@@ -52,16 +53,13 @@ class ReinforcementTrainer:
 
     def __processExperiences(self, experienceStack):
         """Propagates the reward back to transform raw experiences into informed experiences."""
-        replayBuffer = []
-
         seed = self.algorithm.processExperienceSeed()
         for i in range(len(experienceStack)):
             stackIndex = len(experienceStack) - i - 1
 
             raw = experienceStack[stackIndex]
             processed, seed = self.algorithm.processExperience(self, raw, seed)
-            replayBuffer.append(processed)
-        self.replayBuffer = replayBuffer
+            self.replayBuffer.append(processed)
 
 
 class ReinforcementAlgorithm:
@@ -103,7 +101,10 @@ class SoftQ(ReinforcementAlgorithm):
 
         return processed, reward
     def onEndOfEpisode(self, trainer: ReinforcementTrainer):
-        for features, reward in trainer.replayBuffer:
+        for _ in range(Configuration.load().replayBatchSize):
+            index = randrange(0, len(trainer.replayBuffer))
+            features, reward = trainer.replayBuffer[index]
+
             reward = torch.tensor([reward])
             trainer.innerPolicy.train(features, reward)
 

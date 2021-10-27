@@ -31,6 +31,9 @@ class Configuration:
         self.entropyWeight = data["entropyWeight"]
         self.discountFactor = data["discountFactor"]
 
+        self.replayBufferSize = data["replayBufferSize"]
+        self.replayBatchSize = data["replayBatchSize"]
+
         self.qualityMomentum = data["qualityMomentum"]
 
 if __name__ == "__main__":
