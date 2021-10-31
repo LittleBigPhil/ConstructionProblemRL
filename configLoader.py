@@ -17,9 +17,8 @@ class Configuration:
         if Configuration.__loaded__ is None:
             with open("config.yaml", "r") as f:
                 data = yaml.load(f, Loader = yaml.FullLoader)
-                return Configuration(data)
-        else:
-            return __loaded__
+                Configuration.__loaded__ = Configuration(data)
+        return Configuration.__loaded__
 
     def __init__(self, data: dict):
         """The configuration details are transformed from a dictionary entry into an attribute."""

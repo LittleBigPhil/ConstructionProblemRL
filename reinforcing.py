@@ -116,7 +116,7 @@ def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, fea
     loss = torch.mul(logP, factor)
     policy.trainByGradient(features, loss)
 
-def main():
+def main(maxI: int = -1):
     rlTrainer = ReinforcementTrainer()
     maxStepsPerEpisode = Configuration.load().maxStepsPerEpisode
 
@@ -127,7 +127,7 @@ def main():
     bigStep = quality.timeScale()
 
     i = 0
-    while True:
+    while maxI < 0 or i < maxI:
         i += 1
         length = rlTrainer.rollout(maxStepsPerEpisode)
 
