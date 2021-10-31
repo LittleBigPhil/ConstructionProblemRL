@@ -6,6 +6,32 @@ from functools import *
 from math import log
 
 def main():
+    testEntropy()
+
+def testEntropy():
+    entropy = Entropy()
+    probs = [1, .75, .3]
+    for p in probs:
+        entropy.addProbability(p)
+        print(entropy)
+
+    print("\nshould be:")
+    lists = [
+        [1],
+        [.25,.75],
+        [.25 * .7, .75 * .7,.3]
+    ]
+    for list in lists:
+        slowEntropy = Entropy.ofAList(list)
+        print(slowEntropy)
+
+    print("\nundoing:")
+    for i in range(len(probs)):
+        print(f"removing {probs[-i-1]}")
+        entropy.removeProbability(probs[-i - 1])
+        print(entropy)
+
+def testSoftQueue():
     """Demonstrate the behavior of SoftQueue."""
     queue = SoftQueue()
     queue.add("Hello", 7)
@@ -45,6 +71,7 @@ class SoftQueue:
         self.total = 0 # The sum of all proportions in the queue.
         self.sensitivity = sensitivity
         self.offset = offset
+        self.entropy = Entropy()
 
     def add(self, object, priority):
         """Calculates the proportion for the priority and stores the object with this proportion."""
@@ -55,13 +82,14 @@ class SoftQueue:
         index = self.indexForInsertion(proportion)
         self.queue.insert(index, pair)
         self.total += proportion
+        self.entropy.addProbability(self.__probabilityOfProportion(proportion))
 
     def sample(self) -> int:
         """Returns the index of an element of the queue according to the probability."""
         value = random.random()
         for i, prob in enumerate(self.probabilities()):
             value -= prob
-            info = PopInfo(prob, self.total, self.entropy())
+            info = PopInfo(prob, self.total, self.entropy.value)
             if value < 0:
                 return i, info
         return i
@@ -74,7 +102,9 @@ class SoftQueue:
 
     def pop(self):
         i, info = self.sample()
-        self.total -= self.queue[i].proportion
+        proportion = self.queue[i].proportion
+        self.entropy.removeProbability(self.__probabilityOfProportion(proportion))
+        self.total -= proportion
         return self.queue.pop(i).object, info
 
     def __str__(self):
@@ -90,16 +120,53 @@ class SoftQueue:
         return self.queue[item]
 
     def probabilities(self):
+        return map(lambda pair: self.__probabilityOfProportion(pair.proportion), self.queue)
+    def __probabilityOfProportion(self, proportion):
         try:
-            return map(lambda pair: pair.proportion / self.total, self.queue)
+            return proportion / self.total
         except ZeroDivisionError:
             print("softmax instability")
-            return map(lambda pair: 1 / len(self.queue), self.queue)
+            return 1 / len(self.queue)
 
-    def entropy(self):
-        """Calculates the entropy from the probabilities."""
-        pLogPs = map(lambda prob: -prob * log(prob), self.probabilities())
+class Entropy:
+    """Used for keeping track of the entropy of a changing list of probabilities in constant time."""
+    def __init__(self):
+        self.value = 0
+
+    def addProbability(self, probability):
+        if probability != 1:
+            self.__scaleProbabilities(1 - probability)
+            self.value += Entropy.ofAProbability(probability)
+    def removeProbability(self, probability):
+        if probability == 1:
+            self.value = 0
+            return
+        self.value -= Entropy.ofAProbability(probability)
+        self.__undoScaleProbabilities(1 - probability)
+    def __scaleProbabilities(self, scaleFactor):
+        """
+        Calculates sum -p s log(p s) from H.
+        Remember H = sum -p log(p)
+        Assumes sum p = 1
+            Which is why undoing it requires a different method
+        """
+        self.value *= scaleFactor
+        self.value -= scaleFactor * log(scaleFactor)
+    def __undoScaleProbabilities(self, scaleFactor):
+        self.value += scaleFactor * log(scaleFactor)
+        self.value /= scaleFactor
+    def __str__(self):
+        return f"Entropy({self.value})"
+
+    @staticmethod
+    def ofAList(probs):
+        """Calculates the entropy of a list of probabilities."""
+        pLogPs = map(Entropy.ofAProbability, probs)
         return reduce(lambda x, y: x+y, pLogPs)
+    @staticmethod
+    def ofAProbability(prob):
+        """Shortcut for the term of a probability in the entropy calculation."""
+        return -prob * log(prob)
 
 if __name__ == '__main__':
     main()
