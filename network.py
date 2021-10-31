@@ -38,22 +38,22 @@ class TrainableNetwork:
         self.lossFunc = nn.L1Loss()
 
     def __call__(self, features):
-        toReturn = self.network(features)
-        self.network.zero_grad()
+        with torch.no_grad():
+            toReturn = self.network(features)
         return toReturn
 
     def train(self, features, desired):
+        self.network.zero_grad()
         actual = self.network(features)
         loss = self.lossFunc(actual, desired)
         loss.backward()
         self.optimizer.step()
-        self.network.zero_grad()
 
     def trainByGradient(self, features, gradient):
+        self.network.zero_grad()
         self.network(features)
         gradient.backward()
         self.optimizer.step()
-        self.network.zero_grad()
 
 def main():
     """Demonstrates the behavior of TrainableNetwork."""
