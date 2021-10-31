@@ -101,12 +101,21 @@ class SoftQ(ReinforcementAlgorithm):
 
         return processed, reward
     def onEndOfEpisode(self, trainer: ReinforcementTrainer):
+        featuresBatch = []
+        rewardBatch = []
         for _ in range(Configuration.load().replayBatchSize):
             index = randrange(0, len(trainer.replayBuffer))
             features, reward = trainer.replayBuffer[index]
 
             reward = torch.tensor([reward])
-            trainer.innerPolicy.train(features, reward)
+            featuresBatch.append(torch.unsqueeze(features, 0))
+            rewardBatch.append(torch.unsqueeze(reward, 0))
+            #trainer.innerPolicy.train(features, reward)
+        featuresTensor = torch.cat(featuresBatch)
+        rewardTensor = torch.cat(rewardBatch)
+        #print(featuresTensor)
+        #print(rewardTensor)
+        trainer.innerPolicy.train(featuresTensor, rewardTensor)
 
 def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, features, popInfo: PopInfo):
     evaluation = critic(features)
