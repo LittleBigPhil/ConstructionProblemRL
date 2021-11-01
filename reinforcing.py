@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from configLoader import *
 from statistics import *
 from collections import deque
-from random import randrange
+import random
 
 """
 ToDo:
@@ -102,10 +102,10 @@ class SoftQ(ReinforcementAlgorithm):
     def onEndOfEpisode(self, trainer: ReinforcementTrainer):
         featuresBatch = []
         rewardBatch = []
-        for _ in range(Configuration.load().replayBatchSize):
-            index = randrange(0, len(trainer.replayBuffer))
-            features, reward = trainer.replayBuffer[index]
-
+        batchSize = min(Configuration.load().replayBatchSize, len(trainer.replayBuffer))
+        # random.choices samples with replacement, random.sample samples without replacement
+        # random.choices is cheaper, so we're using it
+        for features, reward in random.choices(trainer.replayBuffer, k=batchSize):
             reward = torch.tensor([reward])
             featuresBatch.append(torch.unsqueeze(features, 0))
             rewardBatch.append(torch.unsqueeze(reward, 0))
