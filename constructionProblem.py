@@ -27,8 +27,7 @@ class ConstructionProblem:
     def extractFeatures(self, action, goal):
         """Returns the feature representation of an action and a goal."""
         # Zero pad the feature array, because the network needs a consistent input size.
-        #extraSpaceNeeded = self.instantiationFeatureAmount()-len(action.arg)
-        features = np.zeros(self.instantiationFeatureAmount())
+        features = np.zeros(self.instantiationFeatureAmount(), dtype=np.float32)
         try:
             for i, obj in enumerate(action.arg):
                 features[i] = obj
@@ -38,9 +37,8 @@ class ConstructionProblem:
         if goal is None:
             goal = 0
         features[-1] = goal
-        #features = np.append(np.array(action.arg), goal)
         features = torch.from_numpy(features)
-        return features.float()
+        return features
 
 class VectorAddition(ConstructionProblem):
     """The specification for the vector addition problem."""

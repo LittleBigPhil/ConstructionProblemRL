@@ -100,17 +100,20 @@ class SoftQ(ReinforcementAlgorithm):
 
         return processed, reward
     def onEndOfEpisode(self, trainer: ReinforcementTrainer):
-        featuresBatch = []
-        rewardBatch = []
         batchSize = min(Configuration.load().replayBatchSize, len(trainer.replayBuffer))
+        featuresBatch = np.zeros((batchSize, trainer.env.problem.instantiationFeatureAmount()), dtype=np.float32)
+        rewardBatch = np.zeros((batchSize, 1), dtype=np.float32)
+
         # random.choices samples with replacement, random.sample samples without replacement
         # random.choices is cheaper, so we're using it
+        i = 0
         for features, reward in random.choices(trainer.replayBuffer, k=batchSize):
-            reward = torch.tensor([reward])
-            featuresBatch.append(torch.unsqueeze(features, 0))
-            rewardBatch.append(torch.unsqueeze(reward, 0))
-        featuresTensor = torch.cat(featuresBatch)
-        rewardTensor = torch.cat(rewardBatch)
+            featuresBatch[i] = features
+            rewardBatch[i] = reward
+            i += 1
+
+        featuresTensor = torch.from_numpy(featuresBatch)
+        rewardTensor = torch.from_numpy(rewardBatch)
         trainer.innerPolicy.train(featuresTensor, rewardTensor)
 
 def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, features, popInfo: PopInfo):
