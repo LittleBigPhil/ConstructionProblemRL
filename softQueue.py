@@ -73,6 +73,11 @@ class SoftQueue:
         self.offset = offset
         self.entropy = Entropy()
 
+    def clear(self):
+        self.queue.clear()
+        self.total = 0
+        self.entropy = Entropy()
+
     def add(self, object, priority):
         """Calculates the proportion for the priority and stores the object with this proportion."""
         # Could improve the efficiency of this using binary search

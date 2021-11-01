@@ -2,6 +2,7 @@
 
 import torch
 from torch import nn, autograd, optim, tensor
+import numpy as np
 from configLoader import *
 
 #print(f"cuda available? {torch.cuda.is_available()}")
@@ -9,7 +10,15 @@ from configLoader import *
 class UniformWeighter:
     """A class which prioritizes every action the same, for creating a uniformly random policy."""
     def __call__(self, features):
-        return 1
+        """Mimics how a network behaves, but outputs only ones."""
+        size = features.size()
+        if len(size) > 1:
+            toReturn = np.empty((size[0],1))
+            toReturn.fill(1)
+            toReturn = torch.from_numpy(toReturn)
+            return toReturn.float()
+        else:
+            return torch.tensor(1)
 
 class NeuralNetwork(nn.Module):
     """A network with a single output and no activation function for the output layer."""

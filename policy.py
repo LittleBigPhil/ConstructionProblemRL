@@ -12,16 +12,28 @@ class SoftQueuePolicy:
         self.addQueue = []
         self.policy = policy
     def clear(self):
-        """Empties the soft queue."""
-        self.softQueue = SoftQueue()
+        """Empties the queues."""
+        self.softQueue.clear()
         self.addQueue.clear()
     def add(self, action, features):
         """Adds a new instantiation to the add queue."""
         self.addQueue.append((action, features))
     def __resolveAddQueue(self):
         """Adds all instantiation from the add queue to the soft queue."""
-        for action, features in self.addQueue:
-            self.softQueue.add(action, self.policy(features))
+        if len(self.addQueue) > 0:
+            #for action, features in self.addQueue:
+            #    self.softQueue.add(action, self.policy(features))
+
+            featuresBatch = []
+            for _, features in self.addQueue:
+                featuresBatch.append(torch.unsqueeze(features, 0))
+            featuresTensor = torch.cat(featuresBatch)
+            prioritiesTensor = self.policy(featuresTensor)
+            #print(f"len={len(self.addQueue)} tensor={prioritiesTensor}")
+            for i, (action, _) in enumerate(self.addQueue):
+                self.softQueue.add(action, prioritiesTensor[i,0])
+
+
         self.addQueue.clear()
     def resolve(self):
         """Removes an element from the soft queue according to the probability."""
