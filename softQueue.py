@@ -4,6 +4,7 @@ import math
 import random
 from functools import *
 from math import log
+#from sortedcontainers import SortedList
 
 def main():
     testEntropy()
@@ -62,12 +63,17 @@ class SoftQueue:
         def __str__(self):
             return f"Pair({self.object}, {self.proportion:.2f})"
 
+        def __lt__(self, other):
+            # reversing the order, so bigger probabilities are first
+            return self.proportion > other.proportion
+
     def __init__(self, sensitivity=1, offset = 0):
         """
         @param sensitivity: A parameter of the softmax that specifies how sensitive the proportions are with respect to the priorities.
         @param offset: A parameter of the softmax that helps with numerical stability
         """
         self.queue = []
+        #self.queue = SortedList()
         self.total = 0 # The sum of all proportions in the queue.
         self.sensitivity = sensitivity
         self.offset = offset
@@ -86,6 +92,7 @@ class SoftQueue:
         pair = SoftQueue.ProportionPair(object, proportion)
         index = self.indexForInsertion(proportion)
         self.queue.insert(index, pair)
+        #self.queue.add(pair)
         self.total += proportion
         self.entropy.addProbability(self.__probabilityOfProportion(proportion))
 
