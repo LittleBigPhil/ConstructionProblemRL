@@ -21,10 +21,15 @@ class SoftQueuePolicy:
     def __resolveAddQueue(self):
         """Adds all instantiation from the add queue to the soft queue."""
         if len(self.addQueue) > 0:
-            featuresBatch = []
+            _, features = self.addQueue[0]
+            featuresBatch = np.zeros((len(self.addQueue), len(features)), dtype=np.float32)
+            i = 0
             for _, features in self.addQueue:
-                featuresBatch.append(torch.unsqueeze(features, 0))
-            featuresTensor = torch.cat(featuresBatch)
+                featuresBatch[i] = features
+                i+=1
+
+            featuresTensor = torch.from_numpy(featuresBatch)
+
             prioritiesTensor = self.policy(featuresTensor)
             for i, (action, _) in enumerate(self.addQueue):
                 self.softQueue.add(action, prioritiesTensor[i,0].item())
