@@ -19,7 +19,7 @@ Integrate policy gradient.
 class ReinforcementTrainer:
     def __init__(self):
         problem = VectorAddition()
-        inputSize = problem.featureAmount()
+        inputSize = problem.instantiationFeatureAmount()
 
         hiddenLayers = Configuration.load().hiddenLayers
         hiddenLayerSizeFactor = Configuration.load().hiddenLayerSizeFactor

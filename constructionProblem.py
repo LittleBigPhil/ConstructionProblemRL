@@ -13,9 +13,12 @@ class ConstructionProblem:
     def setupRete(self, rootNode, instantiationsNode):
         """Creates the nodes and connects them to the input and output nodes."""
         raise NotImplementedError()
-    def featureAmount(self) -> int:
-        """The maximum size of the feature array of a production in the problem."""
+    def objectFeatureAmount(self) -> int:
+        """The maximum size of the feature array of an object in the problem."""
         raise NotImplementedError()
+    def instantiationFeatureAmount(self) -> int:
+        """The maximum size of the feature array of an instantiation in the problem."""
+        return self.objectFeatureAmount() * 3
 
     def goalSelectionDelay(self) -> int:
         """How many steps to wait before introducing the goal selection productions."""
@@ -23,11 +26,19 @@ class ConstructionProblem:
 
     def extractFeatures(self, action, goal):
         """Returns the feature representation of an action and a goal."""
+        # Zero pad the feature array, because the network needs a consistent input size.
+        #extraSpaceNeeded = self.instantiationFeatureAmount()-len(action.arg)
+        features = np.zeros(self.instantiationFeatureAmount())
+        try:
+            for i, obj in enumerate(action.arg):
+                features[i] = obj
+        except:
+            features[0] = action.arg
+
         if goal is None:
             goal = 0
-        features = np.append(np.array(action.arg), goal)
-        # Zero pad the feature array, because the network needs a consistent input size.
-        features = np.pad(features, (0, self.featureAmount()-len(features)), 'constant')
+        features[-1] = goal
+        #features = np.append(np.array(action.arg), goal)
         features = torch.from_numpy(features)
         return features.float()
 
@@ -43,5 +54,5 @@ class VectorAddition(ConstructionProblem):
         rootNode.link(twoVectors.right)
         twoVectors.link(addVectors)
         addVectors.link(instantiationsNode)
-    def featureAmount(self):
-        return 3
+    def objectFeatureAmount(self):
+        return 1
