@@ -13,7 +13,6 @@ from random import randrange
 
 """
 ToDo:
-Make replay buffer minibatches compatible with batch training.
 Integrate policy gradient.
 """
 
@@ -110,11 +109,8 @@ class SoftQ(ReinforcementAlgorithm):
             reward = torch.tensor([reward])
             featuresBatch.append(torch.unsqueeze(features, 0))
             rewardBatch.append(torch.unsqueeze(reward, 0))
-            #trainer.innerPolicy.train(features, reward)
         featuresTensor = torch.cat(featuresBatch)
         rewardTensor = torch.cat(rewardBatch)
-        #print(featuresTensor)
-        #print(rewardTensor)
         trainer.innerPolicy.train(featuresTensor, rewardTensor)
 
 def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, features, popInfo: PopInfo):

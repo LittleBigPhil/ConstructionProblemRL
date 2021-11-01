@@ -1,8 +1,10 @@
 """Contains the class definition for the networks which generate the priorities for the policy and that perform the valuations."""
 
 import torch
-from torch import nn, autograd, optim
+from torch import nn, autograd, optim, tensor
 from configLoader import *
+
+#print(f"cuda available? {torch.cuda.is_available()}")
 
 class UniformWeighter:
     """A class which prioritizes every action the same, for creating a uniformly random policy."""
