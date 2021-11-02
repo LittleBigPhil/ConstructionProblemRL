@@ -1,20 +1,22 @@
 import torch
 import numpy as np
-from constructionProblem import VectorAddition
+
 from network import *
 from policy import SoftQueuePolicy
-from reteEnvironment import ReteEnvironment
 from softQueue import PopInfo
-import matplotlib.pyplot as plt
-from configLoader import *
-from statistics import *
-from collections import deque
-import random
 
-"""
-ToDo:
-Integrate policy gradient.
-"""
+from reteEnvironment import ReteEnvironment
+from constructionProblem import VectorAddition
+
+from configLoader import *
+
+from collections import deque
+from reinforcementAlgorithm import *
+
+import matplotlib.pyplot as plt
+from statistics import *
+
+
 
 class ReinforcementTrainer:
     def __init__(self):
@@ -29,7 +31,7 @@ class ReinforcementTrainer:
         self.outerPolicy = SoftQueuePolicy(policy=self.innerPolicy)
         self.critic = TrainableNetwork(inputSize, inputSize * hiddenLayerSizeFactor, hiddenLayers)
         self.env = ReteEnvironment(problem=problem, studentPolicy=self.outerPolicy)
-        self.algorithm = SoftQ()
+        self.algorithm = SoftMC()
 
         self.replayBuffer = deque(maxlen = Configuration.load().replayBufferSize) # Circular buffer
 
@@ -42,7 +44,7 @@ class ReinforcementTrainer:
     def __makeRawExperiences(self, maxStepsPerEpisode: int):
         """Generates raw experiences by stepping according to the policy."""
         experienceStack = []
-        for i in range(maxStepsPerEpisode):
+        for _ in range(maxStepsPerEpisode):
             done, inferred, features, popInfo = self.env.step()
             experienceStack.append(self.algorithm.createRawExperience(self, features, popInfo))
             if done:
@@ -61,68 +63,6 @@ class ReinforcementTrainer:
             self.replayBuffer.append(processed)
 
 
-class ReinforcementAlgorithm:
-    def createRawExperience(self, trainer: ReinforcementTrainer, features, popInfo):
-        raise NotImplementedError()
-    def processExperienceSeed(self):
-        """Returns the seed for use in processing raw experiences."""
-        raise NotImplementedError()
-    def processExperience(self, trainer: ReinforcementTrainer, raw, seed):
-        """
-        raw, seed -> processed, seed
-        Steps backward one step in processing the raw experiences.
-        """
-        raise NotImplementedError()
-    def onEndOfEpisode(self, trainer: ReinforcementTrainer):
-        raise NotImplementedError()
-
-class SoftQ(ReinforcementAlgorithm):
-    def __init__(self, isTD = True):
-        self.isTD = isTD
-    def createRawExperience(self, trainer: ReinforcementTrainer, features, popInfo):
-        return features, popInfo.entropy
-    def processExperienceSeed(self):
-        return 0
-    def processExperience(self, trainer: ReinforcementTrainer, raw, reward):
-        entropyWeight = Configuration.load().entropyWeight
-        discountFactor = Configuration.load().discountFactor
-
-        features, entropy = raw
-
-        reward *= discountFactor
-        reward += -1 + entropyWeight * entropy
-
-        processed = features, reward
-
-
-        if self.isTD:
-            reward = trainer.innerPolicy(features)
-
-        return processed, reward
-    def onEndOfEpisode(self, trainer: ReinforcementTrainer):
-        batchSize = min(Configuration.load().replayBatchSize, len(trainer.replayBuffer))
-        featuresBatch = np.zeros((batchSize, trainer.env.problem.instantiationFeatureAmount()), dtype=np.float32)
-        rewardBatch = np.zeros((batchSize, 1), dtype=np.float32)
-
-        # random.choices samples with replacement, random.sample samples without replacement
-        # random.choices is cheaper, so we're using it
-        i = 0
-        for features, reward in random.choices(trainer.replayBuffer, k=batchSize):
-            featuresBatch[i] = features
-            rewardBatch[i] = reward
-            i += 1
-
-        featuresTensor = torch.from_numpy(featuresBatch)
-        rewardTensor = torch.from_numpy(rewardBatch)
-        trainer.innerPolicy.train(featuresTensor, rewardTensor)
-
-def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, features, popInfo: PopInfo):
-    evaluation = critic(features)
-    assert(False, "Add sensitivity of the softmax and make sure you're doing exponential correctly.")
-    factor = evaluation / popInfo.total
-    logP = torch.log(torch.Tensor([popInfo.probability]))
-    loss = torch.mul(logP, factor)
-    policy.trainByGradient(features, loss)
 
 def main(maxI: int = -1):
     rlTrainer = ReinforcementTrainer()

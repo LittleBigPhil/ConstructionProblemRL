@@ -15,6 +15,7 @@ class SoftQueuePolicy:
         """Empties the queues."""
         self.softQueue.clear()
         self.addQueue.clear()
+
     def add(self, action, features):
         """Adds a new instantiation to the add queue."""
         self.addQueue.append((action, features))

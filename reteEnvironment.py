@@ -40,8 +40,11 @@ class ReteEnvironment:
         if inferred is not None:
             self.rootNode.add(inferred)
             self.log.append((str(instantiation), inferred, -1))
-            #self.policy.sample
         done = self.goal in self.rootNode.objects
+        """if not done:
+            state = self.policy.sampleActionSpace(Configuration.load().argMaxSampleSize)
+        else:
+            state = None"""
         return done, inferred, features, popInfo
 
     def __clear(self):

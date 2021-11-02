@@ -7,6 +7,7 @@ from configLoader import *
 
 #print(f"cuda available? {torch.cuda.is_available()}")
 
+# I want to make this share a
 class UniformWeighter:
     """A class which prioritizes every action the same, for creating a uniformly random policy."""
     def __call__(self, features):

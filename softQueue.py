@@ -8,7 +8,6 @@ from math import log
 
 def main():
     testEntropy()
-
 def testEntropy():
     entropy = Entropy()
     probs = [1, .75, .3]
@@ -31,7 +30,6 @@ def testEntropy():
         print(f"removing {probs[-i-1]}")
         entropy.removeProbability(probs[-i - 1])
         print(entropy)
-
 def testSoftQueue():
     """Demonstrate the behavior of SoftQueue."""
     queue = SoftQueue()
@@ -49,20 +47,16 @@ class PopInfo:
         self.total = total
         self.entropy = entropy
 
-
 class SoftQueue:
     """A soft priority queue. That is, a priority queue which is sampled according to the softmax of the priority."""
     #need to make this more numerically stable by doing softmax(x - max(x))
-
     class ProportionPair:
         """A helper class that functions as a named tuple."""
         def __init__(self, object, proportion):
             self.object = object
             self.proportion = proportion # The priority after being run through the exponential.
-
         def __str__(self):
             return f"Pair({self.object}, {self.proportion:.2f})"
-
         def __lt__(self, other):
             # reversing the order, so bigger probabilities are first
             return self.proportion > other.proportion
@@ -78,7 +72,6 @@ class SoftQueue:
         self.sensitivity = sensitivity
         self.offset = offset
         self.entropy = Entropy()
-
     def clear(self):
         self.queue.clear()
         self.total = 0
@@ -95,17 +88,6 @@ class SoftQueue:
         #self.queue.add(pair)
         self.total += proportion
         self.entropy.addProbability(self.__probabilityOfProportion(proportion))
-
-    def sample(self) -> int:
-        """Returns the index of an element of the queue according to the probability."""
-        value = random.random()
-        for i, prob in enumerate(self.probabilities()):
-            value -= prob
-            info = PopInfo(prob, self.total, self.entropy.value)
-            if value < 0:
-                return i, info
-        return i
-
     def indexForInsertion(self, proportion):
         for i, pair in enumerate(self.queue):
             if proportion > pair.proportion:
@@ -118,16 +100,23 @@ class SoftQueue:
         self.entropy.removeProbability(self.__probabilityOfProportion(proportion))
         self.total -= proportion
         return self.queue.pop(i).object, info
+    def sample(self) -> int:
+        """Returns the index of an element of the queue according to the probability."""
+        value = random.random()
+        for i, prob in enumerate(self.probabilities()):
+            value -= prob
+            info = PopInfo(prob, self.total, self.entropy.value)
+            if value < 0:
+                return i, info
+        return i
 
     def __str__(self):
         if len(self.queue) > 0:
             return "SoftQueue(" + reduce(lambda x, y: f"{x}, {y}", self.queue) + ")"
         else:
             return "SoftQueue()"
-
     def __len__(self):
         return len(self.queue)
-
     def __getitem__(self, item):
         return self.queue[item]
 

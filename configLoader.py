@@ -26,6 +26,7 @@ class Configuration:
         self.hiddenLayerSizeFactor = data["hiddenLayerSizeFactor"]
         self.softMaxSensitivity = data["softMaxSensitivity"]
         self.softMaxOffset = data["softMaxOffset"]
+        self.argMaxSampleSize = data["argMaxSampleSize"]
 
         self.maxStepsPerEpisode = data["maxStepsPerEpisode"]
         self.learningRate = data["learningRate"]
