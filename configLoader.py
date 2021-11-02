@@ -1,4 +1,5 @@
 import yaml
+
 def main():
     maxStepsPerEpisode = Configuration.load().maxStepsPerEpisode
     print(maxStepsPerEpisode)

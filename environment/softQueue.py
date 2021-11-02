@@ -2,7 +2,7 @@
 
 import math
 import random
-from functools import *
+from functools import reduce
 from math import log
 #from sortedcontainers import SortedList
 
@@ -10,8 +10,8 @@ def main():
     testEntropy()
 def testEntropy():
     entropy = Entropy()
-    probs = [1, .75, .3]
-    for p in probs:
+    probabilities = [1, .75, .3]
+    for p in probabilities:
         entropy.addProbability(p)
         print(entropy)
 
@@ -21,14 +21,14 @@ def testEntropy():
         [.25,.75],
         [.25 * .7, .75 * .7,.3]
     ]
-    for list in lists:
-        slowEntropy = Entropy.ofAList(list)
+    for subList in lists:
+        slowEntropy = Entropy.ofAList(subList)
         print(slowEntropy)
 
     print("\nundoing:")
-    for i in range(len(probs)):
-        print(f"removing {probs[-i-1]}")
-        entropy.removeProbability(probs[-i - 1])
+    for i in range(len(probabilities)):
+        print(f"removing {probabilities[-i-1]}")
+        entropy.removeProbability(probabilities[-i - 1])
         print(entropy)
 def testSoftQueue():
     """Demonstrate the behavior of SoftQueue."""
@@ -52,11 +52,11 @@ class SoftQueue:
     #need to make this more numerically stable by doing softmax(x - max(x))
     class ProportionPair:
         """A helper class that functions as a named tuple."""
-        def __init__(self, object, proportion):
-            self.object = object
+        def __init__(self, value, proportion):
+            self.value = value
             self.proportion = proportion # The priority after being run through the exponential.
         def __str__(self):
-            return f"Pair({self.object}, {self.proportion:.2f})"
+            return f"Pair({self.value}, {self.proportion:.2f})"
         def __lt__(self, other):
             # reversing the order, so bigger probabilities are first
             return self.proportion > other.proportion
@@ -77,12 +77,12 @@ class SoftQueue:
         self.total = 0
         self.entropy = Entropy()
 
-    def add(self, object, priority):
+    def add(self, value, priority):
         """Calculates the proportion for the priority and stores the object with this proportion."""
         # Could improve the efficiency of this using binary search
         # Well, binary search isn't useful by itself because insertion is O(log(n)) with python lists
         proportion = math.exp((priority + self.offset) * self.sensitivity)
-        pair = SoftQueue.ProportionPair(object, proportion)
+        pair = SoftQueue.ProportionPair(value, proportion)
         index = self.indexForInsertion(proportion)
         self.queue.insert(index, pair)
         #self.queue.add(pair)
@@ -99,16 +99,18 @@ class SoftQueue:
         proportion = self.queue[i].proportion
         self.entropy.removeProbability(self.__probabilityOfProportion(proportion))
         self.total -= proportion
-        return self.queue.pop(i).object, info
-    def sample(self) -> int:
+        return self.queue.pop(i).value, info
+    def sample(self):
         """Returns the index of an element of the queue according to the probability."""
         value = random.random()
+        i = -1
+        info = None
         for i, prob in enumerate(self.probabilities()):
             value -= prob
             info = PopInfo(prob, self.total, self.entropy.value)
             if value < 0:
                 return i, info
-        return i
+        return i, info
 
     def __str__(self):
         if len(self.queue) > 0:
@@ -160,14 +162,14 @@ class Entropy:
         return f"Entropy({self.value})"
 
     @staticmethod
-    def ofAList(probs):
+    def ofAList(probabilities):
         """Calculates the entropy of a list of probabilities."""
-        pLogPs = map(Entropy.ofAProbability, probs)
+        pLogPs = map(Entropy.ofAProbability, probabilities)
         return reduce(lambda x, y: x+y, pLogPs)
     @staticmethod
-    def ofAProbability(prob):
+    def ofAProbability(probability):
         """Shortcut for the term of a probability in the entropy calculation."""
-        return -prob * log(prob)
+        return -probability * log(probability)
 
 if __name__ == '__main__':
     main()

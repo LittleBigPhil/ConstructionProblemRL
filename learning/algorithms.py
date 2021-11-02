@@ -1,8 +1,12 @@
 import random
-from reinforcing import *
-import torch
+
 import numpy as np
-from configLoader import *
+import torch
+
+from configLoader import Configuration
+from environment.softQueue import PopInfo
+from learning.network import TrainableNetwork
+from learning.training import ReinforcementTrainer, ReinforcementAlgorithm
 
 """
 ToDo:
@@ -10,20 +14,7 @@ Integrate policy gradient.
 Implement Q-Learning
 """
 
-class ReinforcementAlgorithm:
-    def createRawExperience(self, trainer: ReinforcementTrainer, features, popInfo):
-        raise NotImplementedError()
-    def processExperienceSeed(self):
-        """Returns the seed for use in processing raw experiences."""
-        raise NotImplementedError()
-    def processExperience(self, trainer: ReinforcementTrainer, raw, seed):
-        """
-        raw, seed -> processed, seed
-        Steps backward one step in processing the raw experiences.
-        """
-        raise NotImplementedError()
-    def onEndOfEpisode(self, trainer: ReinforcementTrainer):
-        raise NotImplementedError()
+
 
 class SoftMC(ReinforcementAlgorithm):
     def __init__(self, isTD = True):
@@ -109,7 +100,6 @@ class SoftSARSA(ReinforcementAlgorithm):
         featuresTensor = torch.from_numpy(featuresBatch)
 
         trainer.innerPolicy.train(featuresTensor, rewardTensor)
-
 
 def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, features, popInfo: PopInfo):
     evaluation = critic(features)

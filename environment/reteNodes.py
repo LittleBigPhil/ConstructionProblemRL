@@ -1,10 +1,12 @@
 """Contains the class definitions for the building blocks of a Rete network."""
 
 # Helper Functions
+# noinspection PyUnusedLocal
 def always(x):
     return True
 def identity(x):
     return x
+# noinspection PyUnusedLocal
 def doNothing1(x):
     pass
 def doNothing0():
@@ -28,18 +30,18 @@ class BasicNode:
         self.objects = set() # The cache of added objects. This is used to avoid propagating duplicate objects.
         self.children = [] # The nodes which take the output of the current node.
 
-    def add(self, object):
+    def add(self, toAdd):
         """Applies the given functions to process a new object, adds it to the cache, and propagates it to child nodes accordingly."""
-        object = self.transform(object)
-        if self.predicate(object) and object not in self.objects:
-            self.objects.add(object)
-            self.onAdd(object)
+        toAdd = self.transform(toAdd)
+        if self.predicate(toAdd) and toAdd not in self.objects:
+            self.objects.add(toAdd)
+            self.onAdd(toAdd)
             for child in self.children:
-                child.add(object)
+                child.add(toAdd)
     def addMany(self, objects):
         """Adds a list of objects."""
-        for object in objects:
-            self.add(object)
+        for obj in objects:
+            self.add(obj)
     def clear(self):
         """Empties the object cache and the cache of all child nodes."""
         self.objects = set()
@@ -51,8 +53,8 @@ class BasicNode:
         """Connects a new child node to the current node.
         Any objects in the cache are immediately propagated to this child node."""
         self.children.append(childNode)
-        for object in self.objects:
-            childNode.add(object)
+        for obj in self.objects:
+            childNode.add(obj)
     def unlink(self, childNode):
         """Disconnects a child node from the current node.
         Any objects that were propagated to the child node remain in the child node."""

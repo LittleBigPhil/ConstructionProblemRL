@@ -1,9 +1,11 @@
 """Contains the class definition for the networks which generate the priorities for the policy and that perform the valuations."""
 
-import torch
-from torch import nn, autograd, optim, tensor
 import numpy as np
-from configLoader import *
+import torch
+from torch import nn, autograd, optim
+
+from configLoader import Configuration
+
 
 #print(f"cuda available? {torch.cuda.is_available()}")
 
@@ -26,7 +28,7 @@ class NeuralNetwork(nn.Module):
     def __init__(self, inputSize, hiddenSize, hiddenAmount = 2):
         nn.Module.__init__(self)
         self.inputLayer = nn.Linear(inputSize, hiddenSize)
-        self.hiddenLayers = nn.ModuleList([nn.Linear(hiddenSize, hiddenSize) for i in range(hiddenAmount)])
+        self.hiddenLayers = nn.ModuleList([nn.Linear(hiddenSize, hiddenSize) for _ in range(hiddenAmount)])
         self.outputLayer = nn.Linear(hiddenSize, 1)
 
     def forward(self, features):

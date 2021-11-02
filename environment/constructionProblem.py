@@ -1,9 +1,10 @@
 """Contains the definitions of the classes which specify the problem-specific functions."""
 
+import numpy as np
 import torch
 
-from reteNodes import *
-import numpy as np
+from environment.reteNodes import ProductNode, buildProductionNode
+
 
 class ConstructionProblem:
     """The abstract base class of all construction problems."""
@@ -20,6 +21,7 @@ class ConstructionProblem:
         """The maximum size of the feature array of an instantiation in the problem."""
         return self.objectFeatureAmount() * 3
 
+    # noinspection PyMethodMayBeStatic
     def goalSelectionDelay(self) -> int:
         """How many steps to wait before introducing the goal selection productions."""
         return 5
@@ -31,7 +33,7 @@ class ConstructionProblem:
         try:
             for i, obj in enumerate(action.arg):
                 features[i] = obj
-        except:
+        except TypeError: # float object is not iterable
             features[0] = action.arg
 
         if goal is None:

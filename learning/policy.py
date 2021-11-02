@@ -1,8 +1,11 @@
 """Contains the class definition for a policy based on a soft priority queue."""
-from functools import *
-from network import *
-from softQueue import SoftQueue
-from configLoader import *
+import numpy as np
+import torch
+
+from configLoader import Configuration
+from environment.softQueue import SoftQueue
+from learning.network import UniformWeighter
+
 
 class SoftQueuePolicy:
     """A policy for picking instantiations based on a soft priority queue."""
@@ -53,7 +56,7 @@ class SoftQueuePolicy:
                 toSample -= 1
             # Should probably add a special sampling procedure that can't do repeats.
 
-        return [self.softQueue[i].object for i in sampled]
+        return [self.softQueue[i].value for i in sampled]
 
 
 

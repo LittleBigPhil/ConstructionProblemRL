@@ -1,6 +1,6 @@
-from policy import SoftQueuePolicy
-from constructionProblem import ConstructionProblem
-from reteNodes import *
+from environment.constructionProblem import ConstructionProblem
+from environment.reteNodes import BasicNode, buildProductionNode
+from learning.policy import SoftQueuePolicy
 
 class ReteEnvironment:
     def __init__(self, problem: ConstructionProblem, studentPolicy: SoftQueuePolicy = SoftQueuePolicy(), teacherPolicy: SoftQueuePolicy = SoftQueuePolicy()):
