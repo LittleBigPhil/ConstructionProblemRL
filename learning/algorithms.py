@@ -1,5 +1,10 @@
-import random
+"""
+ToDo:
+Integrate policy gradient.
+Implement Q-Learning
+"""
 
+import random
 import numpy as np
 import torch
 
@@ -8,17 +13,14 @@ from environment.softQueue import PopInfo
 from learning.network import TrainableNetwork
 from learning.training import ReinforcementTrainer, ReinforcementAlgorithm
 
-"""
-ToDo:
-Integrate policy gradient.
-Implement Q-Learning
-"""
-
-
-
 class SoftMC(ReinforcementAlgorithm):
     def __init__(self, isTD = True):
         self.isTD = isTD
+    def networks(self):
+        return ["Q"]
+    def activePolicy(self):
+        return "Q"
+
     def createRawExperience(self, trainer: ReinforcementTrainer, features, popInfo):
         return features, popInfo.entropy
     def processExperienceSeed(self):
@@ -35,7 +37,7 @@ class SoftMC(ReinforcementAlgorithm):
         processed = features, reward
 
         if self.isTD:
-            reward = trainer.innerPolicy(features)
+            reward = trainer.networks["Q"](features)
 
         return processed, reward
     def onEndOfEpisode(self, trainer: ReinforcementTrainer):
@@ -53,9 +55,14 @@ class SoftMC(ReinforcementAlgorithm):
 
         featuresTensor = torch.from_numpy(featuresBatch)
         rewardTensor = torch.from_numpy(rewardBatch)
-        trainer.innerPolicy.train(featuresTensor, rewardTensor)
+        trainer.networks["Q"].train(featuresTensor, rewardTensor)
 
 class SoftSARSA(ReinforcementAlgorithm):
+    def networks(self):
+        return ["Q"]
+    def activePolicy(self):
+        return "Q"
+
     def createRawExperience(self, trainer: ReinforcementTrainer, features, popInfo):
         return features, popInfo.entropy
     def processExperienceSeed(self):
@@ -94,12 +101,12 @@ class SoftSARSA(ReinforcementAlgorithm):
         rewardTensor = torch.from_numpy(rewardBatch)
 
         with torch.no_grad():
-            nextStateValuation = trainer.innerPolicy(nextFeaturesTensor)
+            nextStateValuation = trainer.networks["Q"](nextFeaturesTensor)
             discountedRewards = futureWeightingTensor * nextStateValuation
             rewardTensor = discountedRewards + rewardTensor
         featuresTensor = torch.from_numpy(featuresBatch)
 
-        trainer.innerPolicy.train(featuresTensor, rewardTensor)
+        trainer.networks["Q"].train(featuresTensor, rewardTensor)
 
 def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, features, popInfo: PopInfo):
     evaluation = critic(features)

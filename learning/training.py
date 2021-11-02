@@ -8,7 +8,7 @@ from learning.policy import SoftQueuePolicy
 
 
 class ReinforcementTrainer:
-    def __init__(self, algorithm):
+    def __init__(self, algorithm: "ReinforcementAlgorithm"):
         problem = VectorAddition()
         inputSize = problem.instantiationFeatureAmount()
 
@@ -16,18 +16,20 @@ class ReinforcementTrainer:
         hiddenLayerSizeFactor = Configuration.load().hiddenLayerSizeFactor
 
         # innerPolicy = UniformWeighter()
-        self.innerPolicy = TrainableNetwork(inputSize, inputSize * hiddenLayerSizeFactor, hiddenLayers)
-        self.outerPolicy = SoftQueuePolicy(policy=self.innerPolicy)
-        self.critic = TrainableNetwork(inputSize, inputSize * hiddenLayerSizeFactor, hiddenLayers)
-        self.env = ReteEnvironment(problem=problem, studentPolicy=self.outerPolicy)
-        self.algorithm = algorithm
+        def makeNetwork():
+            return TrainableNetwork(inputSize, inputSize * hiddenLayerSizeFactor, hiddenLayers)
+
+        self.__algorithm = algorithm
+        self.networks = {name: makeNetwork() for name in self.__algorithm.networks()}
+        self.__outerPolicy = SoftQueuePolicy(policy=self.networks[self.__algorithm.activePolicy()])
+        self.env = ReteEnvironment(problem=problem, studentPolicy=self.__outerPolicy)
 
         self.replayBuffer = deque(maxlen = Configuration.load().replayBufferSize) # Circular buffer
 
     def rollout(self, maxStepsPerEpisode: int) -> int:
         experienceStack = self.__makeRawExperiences(maxStepsPerEpisode)
         self.__processExperiences(experienceStack)
-        self.algorithm.onEndOfEpisode(self)
+        self.__algorithm.onEndOfEpisode(self)
         return len(experienceStack)
 
     def __makeRawExperiences(self, maxStepsPerEpisode: int):
@@ -35,7 +37,7 @@ class ReinforcementTrainer:
         experienceStack = []
         for _ in range(maxStepsPerEpisode):
             done, inferred, features, popInfo = self.env.step()
-            experienceStack.append(self.algorithm.createRawExperience(self, features, popInfo))
+            experienceStack.append(self.__algorithm.createRawExperience(self, features, popInfo))
             if done:
                 break
         self.env.reset()
@@ -43,15 +45,22 @@ class ReinforcementTrainer:
 
     def __processExperiences(self, experienceStack):
         """Propagates the reward back to transform raw experiences into informed experiences."""
-        seed = self.algorithm.processExperienceSeed()
+        seed = self.__algorithm.processExperienceSeed()
         for i in range(len(experienceStack)):
             stackIndex = len(experienceStack) - i - 1
 
             raw = experienceStack[stackIndex]
-            processed, seed = self.algorithm.processExperience(self, raw, seed)
+            processed, seed = self.__algorithm.processExperience(self, raw, seed)
             self.replayBuffer.append(processed)
 
+    def setActivePolicy(self, name: str):
+        self.__outerPolicy.policy = self.networks[name]
+
 class ReinforcementAlgorithm:
+    def networks(self):
+        raise NotImplementedError()
+    def activePolicy(self):
+        raise NotImplementedError()
     def createRawExperience(self, trainer: ReinforcementTrainer, features, popInfo):
         raise NotImplementedError()
     def processExperienceSeed(self):
