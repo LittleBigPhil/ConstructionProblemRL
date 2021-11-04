@@ -16,5 +16,5 @@ replayBatchSize: 1000
 argMaxSampleSize: 4
 
 # Evaluation
-qualityMomentum: .99
-#qualityMomentum: .99995
+#qualityMomentum: .99
+qualityMomentum: .99995

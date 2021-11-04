@@ -26,18 +26,16 @@ class ReteEnvironment:
             self.policy.add(instantiation, self.problem.extractFeatures(instantiation, self.goal))
 
 
-    def step(self):
+    def step(self, withInfo=True):
         """
         Instantiates a single production according to the policy.
         @return: (done, inferred, features)
         @return done: True if the goal has been reached.
-        @return inferred: The most recently produced object.
-        @return features: The features of the instantiation which was taken.
+        @return actionInfo:
+        @return stateInfo:
         """
         actionInfo = self.policy.resolve()
         instantiation = actionInfo.action
-        features = self.problem.extractFeatures(instantiation, self.goal)
-        actionInfo.action = features
 
         inferred = instantiation.resolve()
         if inferred is not None:
@@ -45,12 +43,13 @@ class ReteEnvironment:
             self.log.append((str(instantiation), inferred, -1))
         done = self.goal in self.rootNode.objects
 
-        stateInfo = self.policy.state()
-        """if not done:
-            actionSpace = self.policy.sampleActionSpace(Configuration.load().argMaxSampleSize)
+        if withInfo:
+            features = self.problem.extractFeatures(instantiation, self.goal) # Might need to capture the goal ahead of resolving
+            actionInfo.action = features
+            stateInfo = self.policy.state()  # Could skip this when "done" if need to.
+            return done, actionInfo, stateInfo
         else:
-            actionSpace = None"""
-        return done, actionInfo, stateInfo
+            return done
 
     def __clear(self):
         """Empty everything and disable goal selection."""
@@ -90,5 +89,5 @@ class ReteEnvironment:
             if i == self.problem.goalSelectionDelay() + 5:
                 self.__forceGoalSelection()
 
-            self.step()
+            self.step(withInfo=False)
             i += 1

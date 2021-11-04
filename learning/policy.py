@@ -44,20 +44,25 @@ class SoftQueuePolicy:
         self.__resolveAddQueue()
         return self.softQueue.pop()
     def state(self) -> StateInfo:
-        return StateInfo(self.softQueue.entropy.value)
-    def sampleActionSpace(self, toSample: int):
+        sampleSize = Configuration.load().argMaxSampleSize
+        return StateInfo(self.softQueue.entropy.value, self.__sampleActionSpace(sampleSize))
+    def __sampleActionSpace(self, toSample: int):
         self.__resolveAddQueue()
-        toSample = max(toSample, len(self.softQueue))
+        toSample = min(toSample, len(self.softQueue))
 
+        # Samples without repeats.
         sampled = []
         while toSample > 0:
             index = self.softQueue.sample().action
             if not index in sampled:
                 sampled.append(index)
                 toSample -= 1
-            # Should probably add a special sampling procedure that can't do repeats.
+
+        # Samples with repeats.
+        #sampled = [self.softQueue.sample().action for _ in range(toSample)]
 
         return [self.softQueue[i].value for i in sampled]
+
 
 
 

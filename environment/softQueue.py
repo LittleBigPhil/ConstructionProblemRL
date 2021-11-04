@@ -48,8 +48,9 @@ class ActionInfo:
         self.total = total
 
 class StateInfo:
-    def __init__(self, entropy):
+    def __init__(self, entropy, actionSpace):
         self.entropy = entropy
+        self.actionSpace = actionSpace
 
 class SoftQueue:
     """A soft priority queue. That is, a priority queue which is sampled according to the softmax of the priority."""
@@ -72,12 +73,14 @@ class SoftQueue:
         """
         self.queue = []
         #self.queue = SortedList()
+        self.__probabilityCache = []
         self.total = 0 # The sum of all proportions in the queue.
         self.sensitivity = sensitivity
         self.offset = offset
         self.entropy = Entropy()
     def clear(self):
         self.queue.clear()
+        self.__probabilityCache.clear()
         self.total = 0
         self.entropy = Entropy()
 
@@ -92,6 +95,7 @@ class SoftQueue:
         #self.queue.add(pair)
         self.total += proportion
         self.entropy.addProbability(self.__probabilityOfProportion(proportion))
+        self.__probabilityCache.clear()
     def indexForInsertion(self, proportion):
         for i, pair in enumerate(self.queue):
             if proportion > pair.proportion:
@@ -103,18 +107,20 @@ class SoftQueue:
         actionInfo = self.sample()
         index = actionInfo.action
         proportion = self.queue[index].proportion
-        self.entropy.removeProbability(self.__probabilityOfProportion(proportion))
+        self.entropy.removeProbability(self.__probabilityAt(index))
         self.total -= proportion
         actionInfo.action = self.queue.pop(index).value
+        self.__probabilityCache.clear()
         return actionInfo
     def sample(self) -> ActionInfo:
         """Returns the index of an element of the queue according to the probability."""
         value = random.random()
         actionInfo = None
-        for i, prob in enumerate(self.probabilities()):
-            value -= prob
-            actionInfo = ActionInfo(i, prob, self.total)
+        for index in range(len(self.queue)):
+            probabilityAtIndex = self.__probabilityAt(index)
+            value -= probabilityAtIndex
             if value < 0:
+                actionInfo = ActionInfo(index, probabilityAtIndex, self.total)
                 return actionInfo
         return actionInfo
 
@@ -128,8 +134,19 @@ class SoftQueue:
     def __getitem__(self, item):
         return self.queue[item]
 
-    def probabilities(self):
-        return map(lambda pair: self.__probabilityOfProportion(pair.proportion), self.queue)
+    def __probabilityAt(self, desiredIndex):
+        """
+        Returns the probability of the element at the desired index.
+        Keeps a cache of all calculated probabilities for more efficient multi-sampling.
+        Lazily constructs the probability list for more efficient sampling.
+        """
+        calculatingIndex = len(self.__probabilityCache) - 1
+        while calculatingIndex < desiredIndex:
+            calculatingIndex += 1
+            pair = self.queue[calculatingIndex]
+            probability = self.__probabilityOfProportion(pair.proportion)
+            self.__probabilityCache.append(probability)
+        return self.__probabilityCache[desiredIndex]
     def __probabilityOfProportion(self, proportion):
         try:
             return proportion / self.total
