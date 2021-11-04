@@ -44,9 +44,11 @@ class ReteEnvironment:
         done = self.goal in self.rootNode.objects
 
         if withInfo:
-            features = self.problem.extractFeatures(instantiation, self.goal) # Might need to capture the goal ahead of resolving
-            actionInfo.action = features
+            def features(action):
+                return self.problem.extractFeatures(action, self.goal) # Might need to capture the goal ahead of resolving
+            actionInfo.action = features(instantiation)
             stateInfo = self.policy.state()  # Could skip this when "done" if need to.
+            stateInfo.actionSpace = map(features, stateInfo.actionSpace)
             return done, actionInfo, stateInfo
         else:
             return done

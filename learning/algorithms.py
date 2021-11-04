@@ -108,6 +108,64 @@ class SoftSARSA(ReinforcementAlgorithm):
 
         trainer.networks["Q"].train(featuresTensor, rewardTensor)
 
+class SoftQ(ReinforcementAlgorithm):
+    def networks(self):
+        return ["Q"]
+    def activePolicy(self):
+        return "Q"
+
+    def createRawExperience(self, trainer: ReinforcementTrainer, actionInfo: ActionInfo, stateInfo: StateInfo):
+        return actionInfo, stateInfo
+    def processExperienceSeed(self):
+        done = True
+        return done
+    def processExperience(self, trainer: ReinforcementTrainer, raw, done):
+        actionInfo, stateInfo = raw
+
+        entropyWeight = Configuration.load().entropyWeight
+        reward = -1 + entropyWeight * stateInfo.entropy
+        if not done:
+            actionSpace = stateInfo.actionSpace
+        else:
+            actionSpace = []
+        processed = actionInfo.action, reward, actionSpace
+
+        done = False
+        return processed, done
+    def onEndOfEpisode(self, trainer: ReinforcementTrainer):
+        discountFactor = Configuration.load().discountFactor
+        argMaxSampleSize = Configuration.load().argMaxSampleSize
+        batchSize = min(Configuration.load().replayBatchSize, len(trainer.replayBuffer))
+
+        featuresBatch = np.zeros((batchSize, trainer.env.problem.instantiationFeatureAmount()), dtype=np.float32)
+        nextActionSpaceBatch = np.zeros((batchSize, argMaxSampleSize, trainer.env.problem.instantiationFeatureAmount()), dtype=np.float32)
+        futureWeightingBatch = np.zeros((batchSize, argMaxSampleSize, 1), dtype=np.float32)
+        rewardBatch = np.zeros((batchSize, 1), dtype=np.float32)
+
+        # random.choices samples with replacement, random.sample samples without replacement
+        # random.choices is cheaper, so we're using it
+        i = 0
+        for features, reward, nextActionSpace in random.choices(trainer.replayBuffer, k=batchSize):
+            featuresBatch[i] = features
+            rewardBatch[i] = reward
+            for j, actionFeatures in enumerate(nextActionSpace):
+                nextActionSpaceBatch[i,j] = actionFeatures
+                futureWeightingBatch[i,j] = discountFactor
+            i += 1
+
+        nextActionSpaceTensor = torch.from_numpy(nextActionSpaceBatch)
+        futureWeightingTensor = torch.from_numpy(futureWeightingBatch)
+        rewardTensor = torch.from_numpy(rewardBatch)
+
+        with torch.no_grad():
+            nextStateValuation = trainer.networks["Q"](nextActionSpaceTensor)
+            discountedRewards = futureWeightingTensor * nextStateValuation
+            argMaxedRewards = torch.argmax(discountedRewards, dim=1)
+            rewardTensor = argMaxedRewards + rewardTensor
+        featuresTensor = torch.from_numpy(featuresBatch)
+
+        trainer.networks["Q"].train(featuresTensor, rewardTensor)
+
 def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, features, popInfo: ActionInfo):
     evaluation = critic(features)
     assert(False, "Add sensitivity of the softmax and make sure you're doing exponential correctly.")

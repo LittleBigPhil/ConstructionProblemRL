@@ -6,7 +6,7 @@ from learning.training import ReinforcementTrainer
 from reporting.momentum import BiasCorrectedMomentum
 
 def main(maxI: int = -1):
-    rlTrainer = ReinforcementTrainer(algorithms.SoftMC())
+    rlTrainer = ReinforcementTrainer(algorithms.SoftQ())
     maxStepsPerEpisode = Configuration.load().maxStepsPerEpisode
 
     yVals = []
