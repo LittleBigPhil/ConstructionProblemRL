@@ -5,6 +5,7 @@ from environment.constructionProblem import VectorAddition
 from environment.reteEnvironment import ReteEnvironment
 from learning.network import TrainableNetwork
 from learning.policy import SoftQueuePolicy
+from environment.softQueue import ActionInfo, StateInfo
 
 
 class ReinforcementTrainer:
@@ -36,8 +37,8 @@ class ReinforcementTrainer:
         """Generates raw experiences by stepping according to the policy."""
         experienceStack = []
         for _ in range(maxStepsPerEpisode):
-            done, inferred, features, popInfo = self.env.step()
-            experienceStack.append(self.__algorithm.createRawExperience(self, features, popInfo))
+            done, actionInfo, stateInfo = self.env.step()
+            experienceStack.append(self.__algorithm.createRawExperience(self, actionInfo, stateInfo))
             if done:
                 break
         self.env.reset()
@@ -61,7 +62,7 @@ class ReinforcementAlgorithm:
         raise NotImplementedError()
     def activePolicy(self):
         raise NotImplementedError()
-    def createRawExperience(self, trainer: ReinforcementTrainer, features, popInfo):
+    def createRawExperience(self, trainer: ReinforcementTrainer, actionInfo: ActionInfo, stateInfo: StateInfo):
         raise NotImplementedError()
     def processExperienceSeed(self):
         """Returns the seed for use in processing raw experiences."""

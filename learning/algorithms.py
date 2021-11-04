@@ -9,7 +9,7 @@ import numpy as np
 import torch
 
 from configLoader import Configuration
-from environment.softQueue import PopInfo
+from environment.softQueue import ActionInfo, StateInfo
 from learning.network import TrainableNetwork
 from learning.training import ReinforcementTrainer, ReinforcementAlgorithm
 
@@ -21,23 +21,23 @@ class SoftMC(ReinforcementAlgorithm):
     def activePolicy(self):
         return "Q"
 
-    def createRawExperience(self, trainer: ReinforcementTrainer, features, popInfo):
-        return features, popInfo.entropy
+    def createRawExperience(self, trainer: ReinforcementTrainer, actionInfo: ActionInfo, stateInfo: StateInfo):
+        return actionInfo, stateInfo
     def processExperienceSeed(self):
         return 0
     def processExperience(self, trainer: ReinforcementTrainer, raw, reward):
         entropyWeight = Configuration.load().entropyWeight
         discountFactor = Configuration.load().discountFactor
 
-        features, entropy = raw
+        actionInfo, stateInfo = raw
 
         reward *= discountFactor
-        reward += -1 + entropyWeight * entropy
+        reward += -1 + entropyWeight * stateInfo.entropy
 
-        processed = features, reward
+        processed = actionInfo.action, reward
 
         if self.isTD:
-            reward = trainer.networks["Q"](features)
+            reward = trainer.networks["Q"](actionInfo.action)
 
         return processed, reward
     def onEndOfEpisode(self, trainer: ReinforcementTrainer):
@@ -63,19 +63,19 @@ class SoftSARSA(ReinforcementAlgorithm):
     def activePolicy(self):
         return "Q"
 
-    def createRawExperience(self, trainer: ReinforcementTrainer, features, popInfo):
-        return features, popInfo.entropy
+    def createRawExperience(self, trainer: ReinforcementTrainer, actionInfo: ActionInfo, stateInfo: StateInfo):
+        return actionInfo, stateInfo
     def processExperienceSeed(self):
         nextFeatures = None
         return nextFeatures
     def processExperience(self, trainer: ReinforcementTrainer, raw, nextFeatures):
-        features, entropy = raw
+        actionInfo, stateInfo = raw
 
         entropyWeight = Configuration.load().entropyWeight
-        reward = -1 + entropyWeight * entropy
-        processed = features, reward, nextFeatures # (S)AR(S)A
+        reward = -1 + entropyWeight * stateInfo.entropy
+        processed = actionInfo.action, reward, nextFeatures # (S)AR(S)A
 
-        return processed, features
+        return processed, actionInfo.action
     def onEndOfEpisode(self, trainer: ReinforcementTrainer):
         discountFactor = Configuration.load().discountFactor
         batchSize = min(Configuration.load().replayBatchSize, len(trainer.replayBuffer))
@@ -108,7 +108,7 @@ class SoftSARSA(ReinforcementAlgorithm):
 
         trainer.networks["Q"].train(featuresTensor, rewardTensor)
 
-def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, features, popInfo: PopInfo):
+def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, features, popInfo: ActionInfo):
     evaluation = critic(features)
     assert(False, "Add sensitivity of the softmax and make sure you're doing exponential correctly.")
     factor = evaluation / popInfo.total

@@ -3,7 +3,6 @@ hiddenLayers: 2
 hiddenLayerSizeFactor: 2
 softMaxSensitivity: .25
 softMaxOffset: -10
-argMaxSampleSize: 4
 
 # Training Details
 maxStepsPerEpisode: 20
@@ -14,7 +13,8 @@ discountFactor: .99
 replayBufferSize: 100000
 replayBatchSize: 1000
 
+argMaxSampleSize: 4
 
 # Evaluation
-#qualityMomentum: .99975
-qualityMomentum: .99995
+qualityMomentum: .99
+#qualityMomentum: .99995

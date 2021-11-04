@@ -41,10 +41,14 @@ def testSoftQueue():
         print(queue.pop())
     print(queue)
 
-class PopInfo:
-    def __init__(self, probability, total, entropy):
+class ActionInfo:
+    def __init__(self, action, probability, total):
+        self.action = action
         self.probability = probability
         self.total = total
+
+class StateInfo:
+    def __init__(self, entropy):
         self.entropy = entropy
 
 class SoftQueue:
@@ -94,23 +98,25 @@ class SoftQueue:
                 return i
         return len(self.queue)
 
-    def pop(self):
-        i, info = self.sample()
-        proportion = self.queue[i].proportion
+    def pop(self) -> ActionInfo:
+        """Samples an element, removes it, and returns that element."""
+        actionInfo = self.sample()
+        index = actionInfo.action
+        proportion = self.queue[index].proportion
         self.entropy.removeProbability(self.__probabilityOfProportion(proportion))
         self.total -= proportion
-        return self.queue.pop(i).value, info
-    def sample(self):
+        actionInfo.action = self.queue.pop(index).value
+        return actionInfo
+    def sample(self) -> ActionInfo:
         """Returns the index of an element of the queue according to the probability."""
         value = random.random()
-        i = -1
-        info = None
+        actionInfo = None
         for i, prob in enumerate(self.probabilities()):
             value -= prob
-            info = PopInfo(prob, self.total, self.entropy.value)
+            actionInfo = ActionInfo(i, prob, self.total)
             if value < 0:
-                return i, info
-        return i, info
+                return actionInfo
+        return actionInfo
 
     def __str__(self):
         if len(self.queue) > 0:

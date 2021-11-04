@@ -3,9 +3,8 @@ import numpy as np
 import torch
 
 from configLoader import Configuration
-from environment.softQueue import SoftQueue
+from environment.softQueue import SoftQueue, StateInfo, ActionInfo
 from learning.network import UniformWeighter
-
 
 class SoftQueuePolicy:
     """A policy for picking instantiations based on a soft priority queue."""
@@ -40,17 +39,19 @@ class SoftQueuePolicy:
 
 
         self.addQueue.clear()
-    def resolve(self):
+    def resolve(self) -> ActionInfo:
         """Removes an element from the soft queue according to the probability."""
         self.__resolveAddQueue()
         return self.softQueue.pop()
+    def state(self) -> StateInfo:
+        return StateInfo(self.softQueue.entropy.value)
     def sampleActionSpace(self, toSample: int):
         self.__resolveAddQueue()
         toSample = max(toSample, len(self.softQueue))
 
         sampled = []
         while toSample > 0:
-            index = self.softQueue.sample()
+            index = self.softQueue.sample().action
             if not index in sampled:
                 sampled.append(index)
                 toSample -= 1
