@@ -10,11 +10,13 @@ learningRate: 1.0e-5
 entropyWeight: .1
 discountFactor: .99
 
-replayBufferSize: 100000
-replayBatchSize: 1000
+replayBufferSize: 1.0e+5
+#replayBatchSize: 250
+replayBatchSize: 5
 
 argMaxSampleSize: 4
+swapNetworkPeriod: 1.0e+3
 
 # Evaluation
-#qualityMomentum: .9995
+episodesPerTimeStep: 1.0e+6
 qualityMomentum: .99995

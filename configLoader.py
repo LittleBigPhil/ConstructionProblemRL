@@ -23,20 +23,23 @@ class Configuration:
 
     def __init__(self, data: dict):
         """The configuration details are transformed from a dictionary entry into an attribute."""
-        self.hiddenLayers = data["hiddenLayers"]
+        self.hiddenLayers = int(data["hiddenLayers"])
         self.hiddenLayerSizeFactor = data["hiddenLayerSizeFactor"]
         self.softMaxSensitivity = data["softMaxSensitivity"]
         self.softMaxOffset = data["softMaxOffset"]
-        self.argMaxSampleSize = data["argMaxSampleSize"]
 
-        self.maxStepsPerEpisode = data["maxStepsPerEpisode"]
+        self.maxStepsPerEpisode = int(data["maxStepsPerEpisode"])
         self.learningRate = data["learningRate"]
         self.entropyWeight = data["entropyWeight"]
         self.discountFactor = data["discountFactor"]
 
-        self.replayBufferSize = data["replayBufferSize"]
-        self.replayBatchSize = data["replayBatchSize"]
+        self.replayBufferSize = int(data["replayBufferSize"])
+        self.replayBatchSize = int(data["replayBatchSize"])
 
+        self.argMaxSampleSize = int(data["argMaxSampleSize"])
+        self.swapNetworkPeriod = int(data["swapNetworkPeriod"])
+
+        self.episodesPerTimeStep = int(data["episodesPerTimeStep"])
         self.qualityMomentum = data["qualityMomentum"]
 
 if __name__ == "__main__":

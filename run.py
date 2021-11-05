@@ -13,7 +13,7 @@ def main(maxI: int = -1):
     xVals = []
 
     quality = BiasCorrectedMomentum(Configuration.load().qualityMomentum)
-    bigStep = quality.timeScale()
+    bigStep = Configuration.load().episodesPerTimeStep
 
     i = 0
     while maxI < 0 or i < maxI:
@@ -21,10 +21,10 @@ def main(maxI: int = -1):
         length = rlTrainer.rollout(maxStepsPerEpisode)
 
         quality.add(maxStepsPerEpisode - length)
-        if i > bigStep:
+        if i > quality.timeScale() and i % 100 == 0:
             xVals.append(i)
             yVals.append(quality.get())
-        if i > bigStep * 2 and i % (bigStep * 4) == 0:
+        if i > 0 and i % bigStep == 0:
             plt.plot(xVals, yVals)
             plt.show()
 

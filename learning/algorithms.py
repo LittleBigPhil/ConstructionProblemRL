@@ -3,7 +3,7 @@ ToDo:
 Integrate policy gradient.
 Implement Q-Learning
 """
-
+import copy
 import random
 import numpy as np
 import torch
@@ -109,10 +109,13 @@ class SoftSARSA(ReinforcementAlgorithm):
         trainer.networks["Q"].train(featuresTensor, rewardTensor)
 
 class SoftQ(ReinforcementAlgorithm):
+    def __init__(self):
+        self.episodeCount = 0
+
     def networks(self):
-        return ["Q"]
+        return ["Q1", "Q2"]
     def activePolicy(self):
-        return "Q"
+        return "Q1"
 
     def createRawExperience(self, trainer: ReinforcementTrainer, actionInfo: ActionInfo, stateInfo: StateInfo):
         return actionInfo, stateInfo
@@ -153,18 +156,32 @@ class SoftQ(ReinforcementAlgorithm):
                 futureWeightingBatch[i,j] = discountFactor
             i += 1
 
-        nextActionSpaceTensor = torch.from_numpy(nextActionSpaceBatch)
-        futureWeightingTensor = torch.from_numpy(futureWeightingBatch)
-        rewardTensor = torch.from_numpy(rewardBatch)
+        features = torch.from_numpy(featuresBatch)
+        nextActionSpace = torch.from_numpy(nextActionSpaceBatch)
+        futureWeighting = torch.from_numpy(futureWeightingBatch)
+        reward = torch.from_numpy(rewardBatch)
 
         with torch.no_grad():
-            nextStateValuation = trainer.networks["Q"](nextActionSpaceTensor)
-            discountedRewards = futureWeightingTensor * nextStateValuation
-            argMaxedRewards = torch.argmax(discountedRewards, dim=1)
-            rewardTensor = argMaxedRewards + rewardTensor
-        featuresTensor = torch.from_numpy(featuresBatch)
+            stateValuation = futureWeighting * trainer.networks["Q1"](nextActionSpace)
+            indexOfSelectedAction = torch.argmax(stateValuation, dim=1)
+            selectedAction = nextActionSpace[range(batchSize), indexOfSelectedAction.flatten()]
+            futureWeighting = futureWeighting[range(batchSize), indexOfSelectedAction.flatten()]
+            stateValuation = futureWeighting * trainer.networks["Q2"](selectedAction)
+            reward += stateValuation
 
-        trainer.networks["Q"].train(featuresTensor, rewardTensor)
+        trainer.networks["Q1"].train(features, reward)
+
+        self.swapNetworks(trainer)
+
+    def swapNetworks(self, trainer: ReinforcementTrainer):
+        self.episodeCount += 1
+        if self.episodeCount > Configuration.load().swapNetworkPeriod:
+            self.episodeCount = 0
+            #trainer.networks["Q1"] = copy.deepcopy(trainer.networks["Q2"])
+            temp = trainer.networks["Q1"]
+            trainer.networks["Q1"] = trainer.networks["Q2"]
+            trainer.networks["Q2"] = temp
+            trainer.setActivePolicy("Q1")
 
 def policyGradientUpdate(policy: TrainableNetwork, critic: TrainableNetwork, features, popInfo: ActionInfo):
     evaluation = critic(features)
