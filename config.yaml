@@ -7,6 +7,8 @@ softMaxOffset: -10
 # Training Details
 maxStepsPerEpisode: 20
 learningRate: 1.0e-5
+adamBeta1: .9
+adamBeta2: .999
 entropyWeight: .1
 discountFactor: .99
 

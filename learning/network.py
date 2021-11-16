@@ -24,12 +24,11 @@ class UniformWeighter:
             return torch.tensor(1)
 
 class NeuralNetwork(nn.Module):
-    """A network with a single output and no activation function for the output layer."""
+    """A network that is to be extended with an output method."""
     def __init__(self, inputSize, hiddenSize, hiddenAmount = 2):
         nn.Module.__init__(self)
         self.inputLayer = nn.Linear(inputSize, hiddenSize)
         self.hiddenLayers = nn.ModuleList([nn.Linear(hiddenSize, hiddenSize) for _ in range(hiddenAmount)])
-        self.outputLayer = nn.Linear(hiddenSize, 1)
 
     def forward(self, features):
         """Applies the neural network."""
@@ -38,17 +37,39 @@ class NeuralNetwork(nn.Module):
         for layer in self.hiddenLayers:
             x = layer(x)
             x = torch.tanh(x)
+        return x
+
+class SimpleNetwork(NeuralNetwork):
+    """A network with a single output and no activation function for the output layer."""
+    def __init__(self, inputSize, hiddenSize, hiddenAmount = 2):
+        NeuralNetwork.__init__(self, inputSize, hiddenSize, hiddenAmount)
+        self.outputLayer = nn.Linear(hiddenSize, 1)
+
+    def forward(self, features):
+        x = NeuralNetwork.forward(self, features)
         x = self.outputLayer(x)
-        #x = nn.LeakyReLU()(x)
-        #x = torch.tanh(x)
-        #x = torch.relu(x)
+        return x
+
+def DuelingNetwork(NeuralNetwork):
+    """A network that implements the dueling network architecture."""
+    def __init__(self, inputSize, hiddenSize, hiddenAmount=2):
+        NeuralNetwork.__init__(self, inputSize, hiddenSize, hiddenAmount)
+        self.stateValue = nn.Linear(hiddenSize, 1)
+        self.advantage = nn.Linear(hiddenSize, 1)
+        raise NotImplementedError()
+
+    def forward(self, features):
+        x = NeuralNetwork.forward(self, features)
+        raise NotImplementedError()
         return x
 
 class TrainableNetwork:
     """A wrapper for a neural network that has a simpler training interface."""
     def __init__(self, inputSize, hiddenSize, hiddenAmount = 2):
-        self.network = NeuralNetwork(inputSize, hiddenSize, hiddenAmount)
-        self.optimizer = optim.Adam(params=self.network.parameters(), lr = Configuration.load().learningRate)
+        self.network = SimpleNetwork(inputSize, hiddenSize, hiddenAmount)
+        config = Configuration.load()
+        adamBetas = (config.adamBeta1, config.adamBeta2)
+        self.optimizer = optim.Adam(params=self.network.parameters(), lr = config.learningRate, betas=adamBetas)
         self.lossFunc = nn.L1Loss()
 
     def __call__(self, features):

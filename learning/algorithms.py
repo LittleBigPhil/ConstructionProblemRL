@@ -1,8 +1,3 @@
-"""
-ToDo:
-Integrate policy gradient.
-Implement Q-Learning
-"""
 import copy
 import random
 import numpy as np
@@ -56,6 +51,9 @@ class SoftMC(ReinforcementAlgorithm):
         featuresTensor = torch.from_numpy(featuresBatch)
         rewardTensor = torch.from_numpy(rewardBatch)
         trainer.networks["Q"].train(featuresTensor, rewardTensor)
+    #def initializeBatch
+    #def populateBatch
+    #def useBatch
 
 class SoftSARSA(ReinforcementAlgorithm):
     def networks(self):

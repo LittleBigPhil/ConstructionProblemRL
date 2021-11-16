@@ -16,9 +16,14 @@ class Configuration:
     @staticmethod
     def load() -> 'Configuration': # Expressing the type hint as a forward reference.
         if Configuration.__loaded__ is None:
-            with open("config.yaml", "r") as f:
-                data = yaml.load(f, Loader = yaml.FullLoader)
-                Configuration.__loaded__ = Configuration(data)
+            try:
+                with open("config.yaml", "r") as f:
+                    data = yaml.load(f, Loader = yaml.FullLoader)
+                    Configuration.__loaded__ = Configuration(data)
+            except IOError:
+                with open("../config.yaml", "r") as f:
+                    data = yaml.load(f, Loader = yaml.FullLoader)
+                    Configuration.__loaded__ = Configuration(data)
         return Configuration.__loaded__
 
     def __init__(self, data: dict):
@@ -30,6 +35,8 @@ class Configuration:
 
         self.maxStepsPerEpisode = int(data["maxStepsPerEpisode"])
         self.learningRate = data["learningRate"]
+        self.adamBeta1 = data["adamBeta1"]
+        self.adamBeta2 = data["adamBeta2"]
         self.entropyWeight = data["entropyWeight"]
         self.discountFactor = data["discountFactor"]
 
